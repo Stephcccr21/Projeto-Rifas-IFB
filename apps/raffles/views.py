@@ -1,3 +1,8 @@
 from django.shortcuts import render
+from rest_framework import viewsets
+from .models import Raffle
+from .serializers import RaffleSerializer
 
-# Create your views here.
+class RaffleViewSet(viewsets.ModelViewSet):
+    queryset = Raffle.objects.all()
+    serializer_class = RaffleSerializer

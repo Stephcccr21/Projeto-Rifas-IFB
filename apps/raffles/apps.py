@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class RafflesConfig(AppConfig):
-    name = 'raffles'
+    name = 'apps.raffles'
