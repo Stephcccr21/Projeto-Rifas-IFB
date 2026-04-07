@@ -16,16 +16,27 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-
-urlpatterns = [
-path('api/', include('apps.users.urls')),
-path('api/', include('apps.raffles.urls')),
-path('api/', include('apps.sales.urls')),
-path('api/', include('apps.payments.urls')),
-path('api/', include('apps.comments.urls')),
-
-]
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api-auth/', include('rest_framework.urls')),
+
+    # USERS
+    path('api/users/', include('apps.users.urls')),
+
+    # COMMENT OUT others temporarily 👇
+    path('api/raffles/', include('apps.raffles.urls')),
+    path('api/sales/', include('apps.sales.urls')),
+    path('api/payments/', include('apps.payments.urls')),
+    path('api/comments/', include('apps.comments.urls')),
+
+    # PASSWORD RESET
+    path('password-reset/', auth_views.PasswordResetView.as_view(),name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+
+
 ]
+print("USERS URLS LOADED 🚀")

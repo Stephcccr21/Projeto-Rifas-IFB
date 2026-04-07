@@ -1,7 +1,7 @@
-from rest_framework.routers import DefaultRouter
-from .views import RaffleViewSet
+from django.urls import path
+from .views import CreateRaffleView, ListRafflesView
 
-router = DefaultRouter()
-router.register(r'raffles', RaffleViewSet)
-
-urlpatterns = router.urls
+urlpatterns = [
+    path('', ListRafflesView.as_view()),          # 👈 changed
+    path('create/', CreateRaffleView.as_view()),
+]

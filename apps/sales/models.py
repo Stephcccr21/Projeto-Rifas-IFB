@@ -2,7 +2,19 @@ from django.db import models
 from django.db import models
 from django.conf import settings
 from apps.raffles.models import Raffle
+
 User = settings.AUTH_USER_MODEL
+
+class Sale(models.Model):
+    raffle = models.ForeignKey(Raffle, on_delete=models.CASCADE, related_name='sales')
+    seller = models.ForeignKey(User, on_delete=models.CASCADE)
+    number = models.IntegerField()
+    buyer_name = models.CharField(max_length=255)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('raffle', 'number')
 
 class Ticket(models.Model):
     raffle = models.ForeignKey(Raffle, on_delete=models.CASCADE)
