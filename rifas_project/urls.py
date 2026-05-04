@@ -15,28 +15,37 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
-from django.contrib.auth import views as auth_views
+from django.urls import include, path
+from django.http import JsonResponse
+from django.conf import settings
+from django.conf.urls.static import static
+
+
+def api_root(request):
+    return JsonResponse({
+        "users": "/api/users/",
+        "raffles": "/api/raffles/",
+        "sales": "/api/sales/",
+        "payments": "/api/payments/",
+        "comments": "/api/comments/",
+    })
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # 🔥 API ROOT
+    path('', api_root),
+
     path('api-auth/', include('rest_framework.urls')),
 
-    # USERS
     path('api/users/', include('apps.users.urls')),
-
-    # COMMENT OUT others temporarily 👇
     path('api/raffles/', include('apps.raffles.urls')),
     path('api/sales/', include('apps.sales.urls')),
     path('api/payments/', include('apps.payments.urls')),
     path('api/comments/', include('apps.comments.urls')),
-
-    # PASSWORD RESET
-    path('password-reset/', auth_views.PasswordResetView.as_view(),name='password_reset'),
-    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
-
-
 ]
-print("USERS URLS LOADED 🚀")
+
+# 🖼️ MEDIA FILES (IMPORTANT for images)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,22 +1,19 @@
 from rest_framework import generics
 from .models import User
-from .serializers import UserRegisterSerializer
-from rest_framework import generics
 from rest_framework.generics import RetrieveUpdateAPIView
-from rest_framework.permissions import IsAuthenticated
 from .serializers import UserSerializer
-from rest_framework.permissions import AllowAny
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .serializers import UserRegisterSerializer
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .serializers import PasswordResetSerializer
+from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import AllowAny
+from .serializers import UserRegisterSerializer
+
 
 User = get_user_model()
 
@@ -37,10 +34,9 @@ class PasswordResetAPIView(APIView):
 
 
 
-class RegisterView(GenericAPIView):
-    permission_classes = [IsAuthenticated]
+class RegisterView(CreateAPIView):
     serializer_class = UserRegisterSerializer
-
+    permission_classes = [AllowAny] 
     def get(self, request):
         return Response({"message": "Use POST to register"})
 
@@ -57,6 +53,8 @@ class ProfileView(RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+    
+
 
 
 

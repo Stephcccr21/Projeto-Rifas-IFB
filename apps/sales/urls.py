@@ -1,7 +1,12 @@
-from django.urls import path
-from .views import CreateSaleView, ListSalesView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import VendedorViewSet, CreateSaleView, ListSalesView
+
+router = DefaultRouter()
+router.register(r'vendedores', VendedorViewSet, basename='vendedores')
 
 urlpatterns = [
-    path('', ListSalesView.as_view()),
-    path('create/', CreateSaleView.as_view()),
+    path('', include(router.urls)),
+    path('sales/', ListSalesView.as_view()),
+    path('sales/create/', CreateSaleView.as_view()),
 ]

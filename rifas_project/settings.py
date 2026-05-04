@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'apps.comments',
     'rest_framework',
     'corsheaders',
+    'django_extensions',
     
     
     
@@ -147,7 +148,15 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ]
 }
 LOGIN_REDIRECT_URL = '/api/users/profile/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+CORS_ALLOW_ALL_ORIGINS = True
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 

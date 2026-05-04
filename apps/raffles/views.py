@@ -1,45 +1,47 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
-from .models import Raffle
-from .serializers import RaffleSerializer
-from apps.users.permissions import IsOrganizer
-from rest_framework.generics import CreateAPIView, ListAPIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Raffle
-from .serializers import RaffleSerializer
+from rest_framework.response import Response
+from rest_framework.decorators import action
+
+from .models import Raffle, Prize, RaffleImage, NumeroRifa
+from .serializers import RaffleSerializer, PrizeSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
-# 🎯 CREATE raffle (ONLY organizer)
-class CreateRaffleView(CreateAPIView):
-    queryset = Raffle.objects.all()
+# =========================
+# 🎟️ RAFFLE VIEWSET
+# =========================
+class RaffleViewSet(ModelViewSet):
     serializer_class = RaffleSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        return Raffle.objects.filter(is_deleted=False)
+
+    def destroy(self, request, *args, **kwargs):
+        raffle = self.get_object()
+        raffle.is_deleted = True
+        raffle.save()
+        return Response(status=204)
 
     def perform_create(self, serializer):
-        user = self.request.user
-
-        # 🔐 Only organizers can create raffles
-        if user.role != 'organizer':
-            raise PermissionError("Only organizers can create raffles")
-
-        serializer.save(organizer=user)
+        serializer.save()
 
 
-# 📋 LIST raffles (public)
-class ListRafflesView(ListAPIView):
-    queryset = Raffle.objects.all()
-    serializer_class = RaffleSerializer
-    permission_classes = [AllowAny]
+# =========================
+# 🎁 PRIZE VIEWSET (NESTED)
+# =========================
+class PrizeViewSet(ModelViewSet):
+    serializer_class = PrizeSerializer
+    permission_classes = [IsAuthenticated]
 
+    lookup_field = "pk"
+    lookup_url_kwarg = "pk"
 
-class RaffleViewSet(ModelViewSet):
-    queryset = Raffle.objects.all()
-    serializer_class = RaffleSerializer
-
-    def get_permissions(self):
-        if self.action == "create":
-            return [IsAuthenticated(), IsOrganizer()]
-        return [IsAuthenticated()]
+    def get_queryset(self):
+        return Prize.objects.filter(rifa_id=self.kwargs.get("raffle_id"))
 
     def perform_create(self, serializer):
-        serializer.save(organizer=self.request.user)
+        raffle = Raffle.objects.get(id=self.kwargs["raffle_id"])
+        serializer.save(rifa=raffle)
