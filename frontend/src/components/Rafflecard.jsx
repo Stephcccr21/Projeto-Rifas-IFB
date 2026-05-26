@@ -26,7 +26,7 @@ export default function RaffleCard({ raffle }) {
         </strong>
       </p>
 
-      <button onClick={() => navigate(`/raffles/${raffle.id}`)}>
+      <button onClick={() => navigate(`/raffles/${raffle.slug}`)}>
         Ver detalhes
       </button>
     </div>

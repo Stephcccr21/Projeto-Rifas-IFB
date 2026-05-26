@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.utils.text import slugify
+import uuid
 
 User = settings.AUTH_USER_MODEL
 
@@ -8,6 +10,7 @@ User = settings.AUTH_USER_MODEL
 # 🧠 SOFT DELETE MANAGER
 # =========================
 class RaffleQuerySet(models.QuerySet):
+
     def active(self):
         return self.filter(is_deleted=False)
 
@@ -24,11 +27,27 @@ class Raffle(models.Model):
 
     # 📝 Basic info
     titulo = models.CharField(max_length=255)
+
+    # 🔗 PUBLIC URL
+    slug = models.SlugField(
+    unique=True,
+    blank=True,
+    null=True
+)
+
     descricao = models.TextField()
-    descricao_html = models.TextField(blank=True, null=True)
+
+    descricao_html = models.TextField(
+        blank=True,
+        null=True
+    )
 
     # 💰 Numbers & pricing
-    valor_numero = models.DecimalField(max_digits=10, decimal_places=2)
+    valor_numero = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
     total_numeros = models.PositiveIntegerField()
 
     # 📅 Draw
@@ -38,7 +57,9 @@ class Raffle(models.Model):
     chave_pix = models.CharField(max_length=255)
 
     # ⏱ Reservation system
-    tempo_reserva = models.PositiveIntegerField(help_text="Tempo em minutos")
+    tempo_reserva = models.PositiveIntegerField(
+        help_text="Tempo em minutos"
+    )
 
     # 📊 Status
     status = models.CharField(
@@ -58,7 +79,10 @@ class Raffle(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     # 🔗 Live stream
-    link_transmissao = models.URLField(blank=True, null=True)
+    link_transmissao = models.URLField(
+        blank=True,
+        null=True
+    )
 
     # 🖼️ Main image
     imagem_principal = models.ImageField(
@@ -68,19 +92,41 @@ class Raffle(models.Model):
     )
 
     # 🕒 Meta
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
 
     # =========================
-    # 🧠 HELPERS (IMPORTANT)
+    # 🧠 HELPERS
     # =========================
     def has_sales(self):
-        return self.numeros.filter(status='vendido').exists()
+        return self.numeros.filter(
+            status='pago'
+        ).exists()
+
+    def save(self, *args, **kwargs):
+
+        if not self.slug:
+
+            base_slug = slugify(self.titulo)
+
+            unique_slug = base_slug
+
+            while Raffle.objects.filter(slug=unique_slug).exists():
+
+                unique_slug = f"{base_slug}-{uuid.uuid4().hex[:6]}"
+
+            self.slug = unique_slug
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.titulo
 
-    # attach manager
     objects = RaffleQuerySet.as_manager()
 
 
@@ -88,13 +134,20 @@ class Raffle(models.Model):
 # 🖼️ GALLERY IMAGES
 # =========================
 class RaffleImage(models.Model):
+
     rifa = models.ForeignKey(
         Raffle,
         related_name='galeria',
         on_delete=models.CASCADE
     )
-    imagem = models.ImageField(upload_to="raffles/gallery/")
-    created_at = models.DateTimeField(auto_now_add=True)
+
+    imagem = models.ImageField(
+        upload_to="raffles/gallery/"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
     def __str__(self):
         return f"Imagem da rifa {self.rifa.id}"
@@ -104,6 +157,7 @@ class RaffleImage(models.Model):
 # 🎁 PRIZES
 # =========================
 class Prize(models.Model):
+
     rifa = models.ForeignKey(
         Raffle,
         related_name='premios',
@@ -111,6 +165,7 @@ class Prize(models.Model):
     )
 
     posicao = models.PositiveIntegerField()
+
     descricao = models.TextField()
 
     imagem = models.ImageField(
@@ -120,7 +175,9 @@ class Prize(models.Model):
     )
 
     class Meta:
+
         ordering = ['posicao']
+
         constraints = [
             models.UniqueConstraint(
                 fields=['rifa', 'posicao'],
@@ -140,7 +197,8 @@ class NumeroRifa(models.Model):
     class StatusChoices(models.TextChoices):
         DISPONIVEL = 'disponivel', 'Disponível'
         RESERVADO = 'reservado', 'Reservado'
-        VENDIDO = 'vendido', 'Vendido'
+        AGUARDANDO_APROVACAO = 'aguardando_aprovacao', 'Aguardando Aprovação'
+        PAGO = 'pago', 'Pago'
 
     rifa = models.ForeignKey(
         Raffle,
@@ -151,17 +209,21 @@ class NumeroRifa(models.Model):
     numero = models.PositiveIntegerField()
 
     status = models.CharField(
-        max_length=15,
+        max_length=30,
         choices=StatusChoices.choices,
         default=StatusChoices.DISPONIVEL
     )
 
-    reservado_em = models.DateTimeField(null=True, blank=True)
+    reservado_em = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return f"{self.rifa.titulo} - {self.numero}"
 
     class Meta:
+
         constraints = [
             models.UniqueConstraint(
                 fields=['rifa', 'numero'],

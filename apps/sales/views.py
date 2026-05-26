@@ -1,165 +1,113 @@
-from rest_framework.generics import CreateAPIView, ListAPIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import ValidationError
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from decimal import Decimal
+
+from django.db import transaction as db_transaction
+
 from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.db import transaction
+from apps.raffles.models import (
+    Raffle,
+    NumeroRifa
+)
 
-import random
-import string
+from .models import (
+    Transaction,
+    TransactionItem
+)
 
-from .models import Sale, Vendedor, VendedorRifa
-from .serializers import SaleSerializer, VendedorSerializer
+from .serializers import (
+    TransactionSerializer
+)
 
 
-# =========================
-# 👤 VENDEDOR
-# =========================
-class VendedorViewSet(ModelViewSet):
-    serializer_class = VendedorSerializer
-    permission_classes = [IsAuthenticated]
+class ReservarNumerosView(APIView):
 
-    def get_queryset(self):
-        return Vendedor.objects.filter(organizador=self.request.user)
+    permission_classes = [AllowAny]
 
-    def create(self, request, *args, **kwargs):
-        User = get_user_model()
+    @db_transaction.atomic
+    def post(self, request, raffle_id):
 
-        username = request.data.get("username")
-        email = request.data.get("email")
-        nome = request.data.get("nome")
-        telefone = request.data.get("telefone")
+        raffle = Raffle.objects.get(id=raffle_id)
 
-        # ✅ validation
-        if not username or not email or not nome:
-            return Response(
-                {"error": "username, email and nome are required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        numeros_ids = request.data.get("numeros", [])
 
-        # 🔒 check duplicate username
-        if User.objects.filter(username=username).exists():
-            return Response(
-                {"error": "Username already exists"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 🔐 generate password
-        password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-
-        try:
-            with transaction.atomic():
-
-                # 👤 create user
-                user = User.objects.create_user(
-                    username=username,
-                    email=email,
-                    password=password,
-                    role='vendedor',
-                    nome=nome,
-                    telefone=telefone
-                )
-
-                # 💾 create vendedor
-                serializer = self.get_serializer(data=request.data)
-                serializer.is_valid(raise_exception=True)
-
-                vendedor = serializer.save(
-                    usuario=user,
-                    organizador=request.user
-                )
-
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 📧 send email (non-blocking)
-        try:
-            send_mail(
-                subject="Acesso ao sistema",
-                message=f"Usuário: {username}\nSenha: {password}",
-                from_email="noreply@rifas.com",
-                recipient_list=[email],
-                fail_silently=True,
-            )
-        except Exception:
-            pass
-
-        return Response({
-            "message": "Vendedor criado com sucesso",
-            "username": username,
-            "password": password,
-            "nome": nome,
-            "vendedor_id": vendedor.id
-        }, status=status.HTTP_201_CREATED)
-
-    # 🔗 Associate raffle
-    @action(detail=True, methods=['post'])
-    def associar_rifa(self, request, pk=None):
-        vendedor = self.get_object()
-        rifa_id = request.data.get('rifa_id')
-
-        if not rifa_id:
-            return Response({"error": "rifa_id is required"}, status=400)
-
-        # 🔒 prevent duplicates
-        if VendedorRifa.objects.filter(vendedor=vendedor, rifa_id=rifa_id).exists():
-            return Response({"message": "Já associado"}, status=200)
-
-        VendedorRifa.objects.create(
-            vendedor=vendedor,
-            rifa_id=rifa_id
+        comprador_nome = request.data.get(
+            "comprador_nome"
         )
 
-        return Response({"message": "Rifa associada"})
+        comprador_email = request.data.get(
+            "comprador_email"
+        )
 
-    # ❌ Remove association
-    @action(detail=True, methods=['delete'])
-    def remover_rifa(self, request, pk=None):
-        vendedor = self.get_object()
-        rifa_id = request.data.get('rifa_id')
+        comprador_telefone = request.data.get(
+            "comprador_telefone"
+        )
 
-        if not rifa_id:
-            return Response({"error": "rifa_id is required"}, status=400)
+        comprador_cpf = request.data.get(
+            "comprador_cpf"
+        )
 
-        VendedorRifa.objects.filter(
-            vendedor=vendedor,
-            rifa_id=rifa_id
-        ).delete()
+        vendedor_id = request.data.get(
+            "vendedor"
+        )
 
-        return Response({"message": "Rifa removida"})
+        numeros = NumeroRifa.objects.select_for_update().filter(
+            id__in=numeros_ids,
+            rifa=raffle
+        )
 
+        if numeros.count() != len(numeros_ids):
 
-# =========================
-# 🎟 CREATE SALE
-# =========================
-class CreateSaleView(CreateAPIView):
-    queryset = Sale.objects.all()
-    serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
+            return Response(
+                {
+                    "error": "Números inválidos"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-    def perform_create(self, serializer):
-        user = self.request.user
+        for numero in numeros:
 
-        try:
-            vendedor = Vendedor.objects.get(usuario=user)
-        except Vendedor.DoesNotExist:
-            raise ValidationError({"error": "Usuário não é um vendedor"})
+            if numero.status != "disponivel":
 
-        serializer.save(vendedor=vendedor)
+                return Response(
+                    {
+                        "error": f"Número {numero.numero} indisponível"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
+        valor_total = (
+            Decimal(raffle.valor_numero) *
+            len(numeros_ids)
+        )
 
-# =========================
-# 📋 LIST SALES
-# =========================
-class ListSalesView(ListAPIView):
-    queryset = Sale.objects.all()
-    serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
+        transacao = Transaction.objects.create(
+            raffle=raffle,
+            vendedor_id=vendedor_id,
+            comprador_nome=comprador_nome,
+            comprador_email=comprador_email,
+            comprador_telefone=comprador_telefone,
+            comprador_cpf=comprador_cpf,
+            valor_total=valor_total,
+        )
+
+        for numero in numeros:
+
+            TransactionItem.objects.create(
+                transaction=transacao,
+                numero=numero
+            )
+
+            numero.status = "reservado"
+            numero.save()
+
+        serializer = TransactionSerializer(
+            transacao
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )

@@ -10,6 +10,8 @@ import MyRaffles from "./pages/MyRaffles";
 import CreateRaffle from "./pages/CreateRaffle";
 import RaffleDetail from "./pages/RaffleDetail";
 import MeusVendedores from "./pages/MeusVendedores";
+import VendedorDashboard from "./pages/VendedorDashboard";
+import PublicRaffle from "./pages/PublicRaffle";
 
 function App() {
   return (
@@ -59,14 +61,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/raffles/:id"
-          element={
-            <PrivateRoute>
-              <RaffleDetail />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/raffles/:slug" element={<RaffleDetail />} />
 
         <Route
           path="/raffles/edit/:id"
@@ -77,6 +72,11 @@ function App() {
           }
         />
         <Route path="/vendedores" element={<MeusVendedores />} />
+        <Route path="/vendedor" element={<VendedorDashboard />} />
+        <Route
+  path="/r/:slug"
+  element={<PublicRaffle />}
+/>
       </Routes>
     </BrowserRouter>
   );

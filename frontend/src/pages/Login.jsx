@@ -1,54 +1,74 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate(); // 👈
+
+  const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-const handleLogin = async () => {
-  try {
-    const res = await api.post("users/login/", {
-      username,
-      password,
-    });
+  const handleLogin = async () => {
+    try {
+      const res = await api.post("users/login/", {
+        username,
+        password,
+      });
 
-    // 🔥 FIX HERE
-    localStorage.setItem("token", res.data.access);
+      // 🔐 SAVE TOKENS
+      localStorage.setItem("access", res.data.access);
+      localStorage.setItem("refresh", res.data.refresh);
 
-    // you NEED user data (fake for now if backend doesn't return it)
-   const userData = {
-      username: username,
-      role: "organizador",
-};
+      // 👤 USER DATA FROM BACKEND
+      const userData = res.data.user;
 
-   login(userData, res.data.access); // ✅ use context
+      localStorage.setItem(
+        "user",
+        JSON.stringify(userData)
+      );
 
-   navigate("/dashboard");
+      // ✅ auth context
+      if (login) {
+        login(userData);
+      }
 
-    localStorage.setItem("user", JSON.stringify(userData));
+      console.log("USER:", userData);
 
-    navigate("/dashboard");
+      // 🚀 REDIRECT BY ROLE
+      if (userData.role === "vendedor") {
+        navigate("/vendedor");
+      } else {
+        navigate("/dashboard");
+      }
 
-  } catch (err) {
-     console.log("FULL ERROR:", err.response);
-     console.log("DATA:", err.response?.data);
-     alert("Login failed");
-  }
-};
+    } catch (err) {
+      console.error(err);
+      alert("Login inválido");
+    }
+  };
 
   return (
     <div>
       <h2>Login</h2>
 
-      <input placeholder="Username" onChange={(e) => setUsername(e.target.value)} />
-      <input type="password" onChange={(e) => setPassword(e.target.value)} />
+      <input
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
 
-      <button onClick={handleLogin}>Login</button>
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+
+      <button onClick={handleLogin}>
+        Login
+      </button>
     </div>
   );
 }

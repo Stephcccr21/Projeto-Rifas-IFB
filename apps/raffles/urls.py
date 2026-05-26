@@ -1,24 +1,43 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import RaffleViewSet, PrizeViewSet
+
+from .views import (
+    RaffleViewSet,
+    PrizeViewSet,
+    PublicRaffleView,
+    ReservarNumerosView,
+)
 
 router = DefaultRouter()
 
-# ✅ FIXED
-router.register(r'', RaffleViewSet, basename='raffles')
+router.register(
+    r'',
+    RaffleViewSet,
+    basename='raffles'
+)
+
+router.register(
+    r'premios',
+    PrizeViewSet,
+    basename='premios'
+)
 
 urlpatterns = [
+
+    # 🌎 PUBLIC RAFFLE
+    path(
+        '<slug:slug>/public/',
+        PublicRaffleView.as_view(),
+        name='public-raffle'
+    ),
+
+    # 🛒 RESERVAR NÚMEROS
+    path(
+        '<int:raffle_id>/reservar/',
+        ReservarNumerosView.as_view(),
+        name='reservar-numeros'
+    ),
+
+    # 🔒 PRIVATE ROUTES
     path('', include(router.urls)),
-
-    path('<int:raffle_id>/premios/', PrizeViewSet.as_view({
-        'get': 'list',
-        'post': 'create'
-    })),
-
-    path('<int:raffle_id>/premios/<int:pk>/', PrizeViewSet.as_view({
-        'get': 'retrieve',
-        'put': 'update',
-        'patch': 'partial_update',
-        'delete': 'destroy'
-    })),
 ]

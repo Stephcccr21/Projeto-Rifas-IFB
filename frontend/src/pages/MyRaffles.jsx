@@ -9,7 +9,7 @@ export default function MyRaffles() {
     const fetchRaffles = async () => {
       try {
         const res = await api.get("raffles/");
-        setRaffles(res.data);
+        setRaffles(res.data.results || res.data);;
       } catch (err) {
         console.error(err);
       }

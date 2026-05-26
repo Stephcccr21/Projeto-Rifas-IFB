@@ -1,93 +1,212 @@
 from rest_framework import serializers
-from .models import Raffle, RaffleImage, Prize, NumeroRifa
+
+from .models import (
+    Raffle,
+    Prize,
+    NumeroRifa,
+)
+
+from apps.sales.models import (
+    Vendedor,
+    VendedorRifa,
+    Transaction,
+    TransactionItem,
+)
 
 
 # =========================
-# 🖼️ RAFFLE IMAGES
+# 👤 VENDEDOR
 # =========================
-class RaffleImageSerializer(serializers.ModelSerializer):
+class VendedorSerializer(serializers.ModelSerializer):
+    nome = serializers.CharField(source='usuario.nome', read_only=True)
+    email = serializers.EmailField(source='usuario.email', read_only=True)
+    telefone = serializers.CharField(source='usuario.telefone', read_only=True)
+
     class Meta:
-        model = RaffleImage
-        fields = ["id", "imagem"]
+        model = Vendedor
+        fields = [
+            'id',
+            'nome',
+            'email',
+            'telefone',
+            'comissao_fixa',
+            'ativo'
+        ]
 
 
 # =========================
-# 🎁 PRIZES
+# 🔗 VENDEDOR ↔ RIFA
+# =========================
+class VendedorRifaSerializer(serializers.ModelSerializer):
+
+    rifa_nome = serializers.CharField(
+        source='rifa.titulo',
+        read_only=True
+    )
+
+    class Meta:
+        model = VendedorRifa
+        fields = [
+            'id',
+            'rifa',
+            'rifa_nome',
+            'ativo'
+        ]
+
+
+# =========================
+# 🧾 TRANSACTION ITEM
+# =========================
+class TransactionItemSerializer(serializers.ModelSerializer):
+
+    numero = serializers.IntegerField(
+        source='numero.numero',
+        read_only=True
+    )
+
+    class Meta:
+        model = TransactionItem
+        fields = [
+            'id',
+            'numero_rifa',
+            'numero'
+        ]
+
+
+# =========================
+# 💰 TRANSACTION
+# =========================
+class TransactionSerializer(serializers.ModelSerializer):
+
+    itens = TransactionItemSerializer(
+        many=True,
+        read_only=True
+    )
+
+    vendedor_nome = serializers.CharField(
+        source='vendedor.usuario.nome',
+        read_only=True
+    )
+
+    class Meta:
+        model = Transaction
+
+        fields = [
+            'id',
+            'comprador_nome',
+            'comprador_email',
+            'comprador_telefone',
+            'comprador_cpf',
+
+            'rifa',
+            'vendedor',
+            'vendedor_nome',
+
+            'valor_total',
+            'status',
+            'data_expiracao',
+            'comprovante_url',
+
+            'created_at',
+            'itens'
+        ]
+
+
+# =========================
+# 🎁 PRÊMIOS
 # =========================
 class PrizeSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Prize
-        fields = ["id", "posicao", "descricao", "imagem"]
+        fields = [
+            'id',
+            'posicao',
+            'descricao',
+            'imagem'
+        ]
 
 
 # =========================
-# 🎟️ RAFFLE MAIN
+# 🎟️ NÚMEROS
+# =========================
+class NumeroRifaSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = NumeroRifa
+        fields = [
+            'id',
+            'numero',
+            'status'
+        ]
+
+
+# =========================
+# 🎟️ RAFFLE
 # =========================
 class RaffleSerializer(serializers.ModelSerializer):
 
-    # 🔥 nested (read only)
-    galeria = RaffleImageSerializer(many=True, read_only=True)
-    premios = PrizeSerializer(many=True, read_only=True)
+    class Meta:
+
+        model = Raffle
+
+        fields = '__all__'
+
+        read_only_fields = [
+            'organizador',
+            'slug',
+            'created_at',
+            'updated_at'
+        ]
+
+
+# =========================
+# 🌎 PUBLIC RAFFLE
+# =========================
+class PublicRaffleSerializer(serializers.ModelSerializer):
+
+    premios = PrizeSerializer(
+        many=True,
+        read_only=True
+    )
+
+    numeros = NumeroRifaSerializer(
+        many=True,
+        read_only=True
+    )
+
+    vendedores = serializers.SerializerMethodField()
 
     class Meta:
         model = Raffle
-        fields = "__all__"
-        read_only_fields = ["organizador", "is_deleted"]
 
-    # =========================
-    # 🔥 CREATE (WITH IMAGES)
-    # =========================
-    def create(self, validated_data):
-        request = self.context.get("request")
+        fields = [
+            'id',
+            'titulo',
+            'descricao',
+            'descricao_html',
+            'slug',
+            'valor_numero',
+            'total_numeros',
+            'data_sorteio',
+            'imagem_principal',
+            'premios',
+            'numeros',
+            'vendedores'
+        ]
 
-        # 🖼️ get files
-        imagens = request.FILES.getlist("galeria")
-        imagem_principal = request.FILES.get("imagem_principal")
+    def get_vendedores(self, obj):
 
-        # 🎟️ create raffle
-        raffle = Raffle.objects.create(
-            organizador=request.user,
-            imagem_principal=imagem_principal,
-            **validated_data
+        vendedores = VendedorRifa.objects.filter(
+            rifa=obj,
+            ativo=True,
+            vendedor__ativo=True
         )
 
-        # 🎟️ auto-generate numbers
-        NumeroRifa.objects.bulk_create([
-            NumeroRifa(
-                rifa=raffle,
-                numero=i,
-                status="disponivel"
-            )
-            for i in range(1, raffle.total_numeros + 1)
-        ])
-
-        # 🖼️ save gallery
-        for img in imagens:
-            RaffleImage.objects.create(
-                raffle=raffle,
-                imagem=img
-            )
-
-        return raffle
-
-    # =========================
-    # 🔒 UPDATE (LOCK FIELDS)
-    # =========================
-    def update(self, instance, validated_data):
-
-        # 🚫 block changes after sales
-        if instance.numeros.filter(status="vendido").exists():
-
-            blocked_fields = [
-                "valor_numero",
-                "total_numeros",
-                "data_sorteio",
-            ]
-
-            for field in blocked_fields:
-                if field in validated_data:
-                    raise serializers.ValidationError(
-                        f"O campo '{field}' não pode ser alterado após vendas."
-                    )
-
-        return super().update(instance, validated_data)
+        return [
+            {
+                "id": rel.vendedor.id,
+                "nome": rel.vendedor.usuario.nome
+            }
+            for rel in vendedores
+        ]

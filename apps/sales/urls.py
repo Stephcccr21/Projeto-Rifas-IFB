@@ -1,12 +1,15 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import VendedorViewSet, CreateSaleView, ListSalesView
+from django.urls import path
 
-router = DefaultRouter()
-router.register(r'vendedores', VendedorViewSet, basename='vendedores')
+from .views import (
+    ReservarNumerosView
+)
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('sales/', ListSalesView.as_view()),
-    path('sales/create/', CreateSaleView.as_view()),
+
+    path(
+        "raffle/<int:raffle_id>/reservar/",
+        ReservarNumerosView.as_view(),
+        name="reservar-numeros"
+    ),
+
 ]

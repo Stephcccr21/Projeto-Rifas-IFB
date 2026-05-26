@@ -6,7 +6,7 @@ const api = axios.create({
 
 // attach token automatically
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access");
 
   if (
     token &&
