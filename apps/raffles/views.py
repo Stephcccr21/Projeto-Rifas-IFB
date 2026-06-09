@@ -1,4 +1,6 @@
 from datetime import timedelta
+from .models import ResultadoSorteio
+from .serializers import ResultadoSorteioSerializer
 
 from django.utils import timezone
 
@@ -10,6 +12,8 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .services import executar_sorteio
+from .models import Raffle
 
 from .models import (
     Raffle,
@@ -34,19 +38,129 @@ from apps.sales.models import (
 # =========================
 class RaffleViewSet(viewsets.ModelViewSet):
 
-    queryset = Raffle.objects.all()
-
     serializer_class = RaffleSerializer
 
     permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
+    def get_queryset(self):
 
-        serializer.save(
-            organizador=self.request.user
+        return Raffle.objects.filter(
+            organizador=self.request.user,
+            is_deleted=False
         )
 
+    def perform_create(self, serializer):
 
+        rifa = serializer.save(
+            organizador=self.request.user,
+            status=Raffle.StatusChoices.ACTIVE
+        )
+
+        for numero in range(
+            1,
+            rifa.total_numeros + 1
+        ):
+
+            NumeroRifa.objects.create(
+                rifa=rifa,
+                numero=numero
+            )
+
+    def update(self, request, *args, **kwargs):
+
+        rifa = self.get_object()
+
+        if rifa.organizador != request.user:
+
+            return Response(
+                {
+                    "erro":
+                    "Você não pode editar esta rifa"
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if timezone.now() >= rifa.data_sorteio:
+
+            return Response(
+                {
+                    "erro":
+                    "Não é possível alterar a rifa após a data do sorteio"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().update(
+            request,
+            *args,
+            **kwargs
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+
+        rifa = self.get_object()
+
+        if rifa.organizador != request.user:
+
+            return Response(
+                {
+                    "erro":
+                    "Você não pode editar esta rifa"
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if timezone.now() >= rifa.data_sorteio:
+
+            return Response(
+                {
+                    "erro":
+                    "Não é possível alterar a rifa após a data do sorteio"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().partial_update(
+            request,
+            *args,
+            **kwargs
+        )
+
+    def destroy(self, request, *args, **kwargs):
+
+        rifa = self.get_object()
+
+        if rifa.organizador != request.user:
+
+            return Response(
+                {
+                    "erro":
+                    "Você não pode excluir esta rifa"
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if rifa.has_sales():
+
+            return Response(
+                {
+                    "erro":
+                    "Não é possível excluir uma rifa que possui vendas"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        rifa.is_deleted = True
+
+        rifa.save()
+
+        return Response(
+            {
+                "mensagem":
+                "Rifa excluída com sucesso"
+            },
+            status=status.HTTP_200_OK
+        )
 # =========================
 # 🎁 PRIZE VIEWSET
 # =========================
@@ -240,3 +354,94 @@ class ReservarNumerosView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+class SortearRifaView(APIView):
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    def post(self, request, raffle_id):
+
+        try:
+
+            rifa = Raffle.objects.get(
+                id=raffle_id,
+                organizador=request.user
+            )
+
+        except Raffle.DoesNotExist:
+
+            return Response(
+                {
+                    "erro":
+                    "Rifa não encontrada"
+                },
+                status=404
+            )
+
+        if rifa.status != "active":
+
+            return Response(
+                {
+                    "erro":
+                    "Rifa não está ativa"
+                },
+                status=400
+            )
+
+        executar_sorteio(rifa)
+
+        return Response({
+            "mensagem":
+            "Sorteio realizado"
+        })  
+class ResultadoSorteioView(APIView):
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    def get(self, request, raffle_id):
+
+        resultados = ResultadoSorteio.objects.filter(
+            rifa_id=raffle_id,
+            rifa__organizador=request.user
+        ).order_by(
+            "premio__posicao"
+        )
+
+        serializer = ResultadoSorteioSerializer(
+            resultados,
+            many=True
+        )
+
+        return Response(
+            serializer.data
+        )      
+class PublicarRifaView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, raffle_id):
+
+        try:
+
+            rifa = Raffle.objects.get(
+                id=raffle_id,
+                organizador=request.user
+            )
+
+        except Raffle.DoesNotExist:
+
+            return Response(
+                {"erro": "Rifa não encontrada"},
+                status=404
+            )
+
+        rifa.status = Raffle.StatusChoices.ACTIVE
+
+        rifa.save()
+
+        return Response({
+            "mensagem": "Rifa publicada com sucesso"
+        })    

@@ -44,6 +44,10 @@ urlpatterns = [
     path('api/sales/', include('apps.sales.urls')),
     path('api/payments/', include('apps.payments.urls')),
     path('api/comments/', include('apps.comments.urls')),
+    path(
+    "api/comments/",
+    include("apps.comments.urls")
+),
 ]
 
 # 🖼️ MEDIA FILES (IMPORTANT for images)

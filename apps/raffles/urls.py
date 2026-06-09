@@ -1,14 +1,22 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from .views import ResultadoSorteioView
+from .views import PublicarRifaView
 
 from .views import (
     RaffleViewSet,
     PrizeViewSet,
     PublicRaffleView,
     ReservarNumerosView,
+    SortearRifaView,
 )
 
 router = DefaultRouter()
+router.register(
+    r'premios',
+    PrizeViewSet,
+    basename='premios'
+)
 
 router.register(
     r'',
@@ -16,11 +24,6 @@ router.register(
     basename='raffles'
 )
 
-router.register(
-    r'premios',
-    PrizeViewSet,
-    basename='premios'
-)
 
 urlpatterns = [
 
@@ -37,7 +40,20 @@ urlpatterns = [
         ReservarNumerosView.as_view(),
         name='reservar-numeros'
     ),
+    path(
+    "<int:raffle_id>/publicar/",
+    PublicarRifaView.as_view(),
+),
+    path(
+    "<int:raffle_id>/sortear/",
+    SortearRifaView.as_view(),
+),
 
     # 🔒 PRIVATE ROUTES
     path('', include(router.urls)),
+    path(
+    "<int:raffle_id>/resultados/",
+    ResultadoSorteioView.as_view(),
+),
+
 ]

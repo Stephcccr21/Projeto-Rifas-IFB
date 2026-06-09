@@ -12,12 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-}
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
@@ -56,6 +52,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_extensions',
+    "django_crontab",
     
     
     
@@ -103,7 +100,13 @@ DATABASES = {
     }
 }
 
-
+CRONJOBS = [
+    (
+        "*/5 * * * *",
+        "django.core.management.call_command",
+        ["expirar_reservas"]
+    ),
+]
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -158,5 +161,30 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+
+CELERY_ACCEPT_CONTENT = ["json"]
+
+CELERY_TASK_SERIALIZER = "json"
+
+CELERY_RESULT_SERIALIZER = "json"
+
+CELERY_TIMEZONE = "America/Sao_Paulo"
+
+CELERY_BEAT_SCHEDULE = {
+
+    "verificar-sorteios": {
+
+        "task":
+            "apps.raffles.tasks.verificar_sorteios",
+
+        "schedule": 3600,
+
+    },
+
+}
 
 

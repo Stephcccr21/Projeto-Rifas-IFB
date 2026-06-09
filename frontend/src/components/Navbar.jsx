@@ -14,27 +14,51 @@ export default function Navbar() {
   return (
     <nav style={styles.nav}>
       <div style={styles.left}>
-        <Link to="/" style={styles.link}>Home</Link>
+        <Link to="/" style={styles.link}>
+          Home
+        </Link>
       </div>
 
       <div style={styles.right}>
         {!user && (
           <>
-            <Link to="/" style={styles.link}>Login</Link>
-            <Link to="/register" style={styles.link}>Register</Link>
+            <Link to="/" style={styles.link}>
+              Login
+            </Link>
+
+            <Link to="/register" style={styles.link}>
+              Register
+            </Link>
           </>
         )}
 
         {user && (
           <>
-            <Link to="/dashboard" style={styles.link}>Dashboard</Link>
-            <Link to="/profile" style={styles.link}>Profile</Link>
+            <Link to="/dashboard" style={styles.link}>
+              Dashboard
+            </Link>
 
-            {/* 👇 Only ORGANIZER sees this */}
+            <Link to="/profile" style={styles.link}>
+              Profile
+            </Link>
+
             {user?.role === "organizador" && (
               <>
-                <Link to="/my-raffles" style={styles.link}>Minhas Rifas</Link>
-                <Link to="/create-raffle" style={styles.link}>Criar Rifa</Link>
+                <Link to="/my-raffles" style={styles.link}>
+                  Minhas Rifas
+                </Link>
+
+                <Link to="/create-raffle" style={styles.link}>
+                  Criar Rifa
+                </Link>
+
+                <Link to="/dashboard/pagamentos" style={styles.link}>
+                  Pagamentos
+                </Link>
+
+                <Link to="/dashboard/comentarios" style={styles.link}>
+                  Comentários
+                </Link>
               </>
             )}
 
@@ -56,19 +80,23 @@ const styles = {
     background: "#222",
     color: "white",
   },
+
   left: {
     display: "flex",
     gap: "10px",
   },
+
   right: {
     display: "flex",
     gap: "10px",
     alignItems: "center",
   },
+
   link: {
     color: "white",
     textDecoration: "none",
   },
+
   button: {
     background: "red",
     color: "white",

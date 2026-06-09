@@ -14,12 +14,18 @@ from apps.raffles.models import (
 class Transaction(models.Model):
 
     STATUS_CHOICES = [
-        ("reservada", "Reservada"),
-        ("aguardando", "Aguardando"),
-        ("paga", "Paga"),
-        ("expirada", "Expirada"),
-        ("rejeitada", "Rejeitada"),
-    ]
+    ("reservada", "Reservada"),
+    ("aguardando_aprovacao", "Aguardando Aprovação"),
+    ("paga", "Paga"),
+    ("expirada", "Expirada"),
+    ("rejeitada", "Rejeitada"),
+]
+
+    comprovante = models.FileField(
+        upload_to="comprovantes/",
+        null=True,
+        blank=True
+    )
 
     raffle = models.ForeignKey(
         Raffle,
@@ -49,7 +55,7 @@ class Transaction(models.Model):
     )
 
     status = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=STATUS_CHOICES,
         default="reservada"
     )
@@ -64,6 +70,10 @@ class Transaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     updated_at = models.DateTimeField(auto_now=True)
+    motivo_rejeicao = models.TextField(
+    blank=True,
+    null=True
+)
 
     def save(self, *args, **kwargs):
 
@@ -125,6 +135,10 @@ class Vendedor(models.Model):
         decimal_places=2,
         default=0
     )
+    total_vendas = models.PositiveIntegerField(
+        default=0
+    )
+    
 
     ativo = models.BooleanField(default=True)
 

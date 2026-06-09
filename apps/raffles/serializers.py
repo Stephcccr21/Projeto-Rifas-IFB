@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from .models import ResultadoSorteio
+
 
 from .models import (
     Raffle,
@@ -121,6 +123,7 @@ class PrizeSerializer(serializers.ModelSerializer):
         model = Prize
         fields = [
             'id',
+            'rifa',
             'posicao',
             'descricao',
             'imagem'
@@ -146,18 +149,15 @@ class NumeroRifaSerializer(serializers.ModelSerializer):
 # =========================
 class RaffleSerializer(serializers.ModelSerializer):
 
+    premios = PrizeSerializer(
+        many=True,
+        read_only=True
+    )
+
     class Meta:
-
         model = Raffle
-
-        fields = '__all__'
-
-        read_only_fields = [
-            'organizador',
-            'slug',
-            'created_at',
-            'updated_at'
-        ]
+        fields = "__all__"
+        read_only_fields = ["organizador"]
 
 
 # =========================
@@ -210,3 +210,26 @@ class PublicRaffleSerializer(serializers.ModelSerializer):
             }
             for rel in vendedores
         ]
+class ResultadoSorteioSerializer(serializers.ModelSerializer):
+
+    premio_nome = serializers.CharField(
+        source="premio.descricao",
+        read_only=True
+    )
+
+    numero = serializers.IntegerField(
+        source="numero_sorteado.numero",
+        read_only=True
+    )
+
+    class Meta:
+
+        model = ResultadoSorteio
+
+        fields = (
+            "id",
+            "premio_nome",
+            "numero",
+            "comprador_nome",
+            "data_sorteio",
+        )    

@@ -188,7 +188,6 @@ class Prize(models.Model):
     def __str__(self):
         return f"Prêmio {self.posicao} - Rifa {self.rifa.id}"
 
-
 # =========================
 # 🎟️ NUMBERS
 # =========================
@@ -230,3 +229,35 @@ class NumeroRifa(models.Model):
                 name='unique_rifa_numero'
             )
         ]
+class ResultadoSorteio(models.Model):
+
+    rifa = models.ForeignKey(
+        Raffle,
+        on_delete=models.CASCADE,
+        related_name="resultados"
+    )
+
+    premio = models.ForeignKey(
+        Prize,
+        on_delete=models.CASCADE
+    )
+
+    numero_sorteado = models.ForeignKey(
+        NumeroRifa,
+        on_delete=models.CASCADE
+    )
+
+    comprador_nome = models.CharField(
+        max_length=255
+    )
+
+    data_sorteio = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+
+        return (
+            f"{self.rifa.titulo} - "
+            f"{self.numero_sorteado.numero}"
+        )        

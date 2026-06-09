@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function PublicRaffle() {
 
   const { slug } = useParams();
+  const navigate = useNavigate();
 
   const [rifa, setRifa] = useState(null);
 
@@ -24,8 +26,30 @@ export default function PublicRaffle() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    fetchRifa();
-  }, []);
+
+  fetchRifa();
+
+}, []);
+
+useEffect(() => {
+
+  if (rifa) {
+
+    fetchComments();
+
+  }
+
+}, [rifa]);
+  const [comments, setComments] = useState([]);
+
+  const [commentForm, setCommentForm] = useState({
+  nome: "",
+  email: "",
+  texto: "",
+  });
+
+  const [sendingComment, setSendingComment] =
+  useState(false);
 
   // =========================
   // 🌎 FETCH RAFFLE
@@ -39,6 +63,7 @@ export default function PublicRaffle() {
       );
 
       const data = await res.json();
+      console.log(data);
 
       setRifa(data);
 
@@ -51,6 +76,25 @@ export default function PublicRaffle() {
     }
 
   };
+  const fetchComments = async () => {
+
+  try {
+
+    const res = await fetch(
+      `http://127.0.0.1:8000/api/comments/rifa/${rifa.id}/comentarios/listar/`
+    );
+
+    const data = await res.json();
+
+    setComments(data);
+
+  } catch (err) {
+
+    console.error(err);
+
+  }
+
+};
 
   // =========================
   // 🎨 NUMBER COLORS
@@ -263,16 +307,12 @@ export default function PublicRaffle() {
         );
 
       }
+      const transactionId =
+  data.transacao_id;
 
-      alert(
-        "Números reservados com sucesso!"
-      );
-
-      setSelectedNumbers([]);
-
-      setShowForm(false);
-
-      fetchRifa();
+navigate(
+  `/checkout/${transactionId}`
+);
 
     } catch (err) {
 
@@ -287,7 +327,57 @@ export default function PublicRaffle() {
     }
 
   };
+const enviarComentario = async () => {
 
+  try {
+
+    setSendingComment(true);
+
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/comments/rifa/${rifa.id}/comentarios/`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify(
+          commentForm
+        ),
+      }
+    );
+
+    if (!response.ok) {
+
+      throw new Error(
+        "Erro ao enviar comentário"
+      );
+
+    }
+
+    alert(
+      "Comentário enviado para moderação"
+    );
+
+    setCommentForm({
+      nome: "",
+      email: "",
+      texto: "",
+    });
+
+  } catch (err) {
+
+    alert(err.message);
+
+  } finally {
+
+    setSendingComment(false);
+
+  }
+
+};
   if (!rifa) {
 
     return (
@@ -393,7 +483,7 @@ export default function PublicRaffle() {
             }}
           >
 
-            {rifa.numeros.map((numero) => (
+            {rifa.numeros?.map((numero) => (
 
               <button
                 key={numero.id}
@@ -420,6 +510,108 @@ export default function PublicRaffle() {
             ))}
 
           </div>
+
+                </div>
+
+        {/* =========================
+            💬 COMENTÁRIOS
+        ========================= */}
+
+        <div style={{ marginTop: 50 }}>
+
+          <h2>💬 Comentários</h2>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              marginBottom: 30,
+            }}
+          >
+
+            <input
+              placeholder="Seu nome"
+              value={commentForm.nome}
+              onChange={(e) =>
+                setCommentForm({
+                  ...commentForm,
+                  nome: e.target.value,
+                })
+              }
+            />
+
+            <input
+              placeholder="Seu email"
+              value={commentForm.email}
+              onChange={(e) =>
+                setCommentForm({
+                  ...commentForm,
+                  email: e.target.value,
+                })
+              }
+            />
+
+            <textarea
+              rows={4}
+              placeholder="Digite seu comentário"
+              value={commentForm.texto}
+              onChange={(e) =>
+                setCommentForm({
+                  ...commentForm,
+                  texto: e.target.value,
+                })
+              }
+            />
+
+            <button
+              onClick={enviarComentario}
+              disabled={sendingComment}
+            >
+              {
+                sendingComment
+                  ? "Enviando..."
+                  : "Enviar comentário"
+              }
+            </button>
+
+          </div>
+
+          <h3>
+            Comentários aprovados
+          </h3>
+
+          {comments.length === 0 && (
+
+            <p>
+              Nenhum comentário ainda.
+            </p>
+
+          )}
+
+          {comments.map((comment) => (
+
+            <div
+              key={comment.id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                padding: 15,
+                marginBottom: 10,
+              }}
+            >
+
+              <strong>
+                {comment.nome}
+              </strong>
+
+              <p>
+                {comment.texto}
+              </p>
+
+            </div>
+
+          ))}
 
         </div>
 

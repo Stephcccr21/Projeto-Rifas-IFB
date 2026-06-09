@@ -8,6 +8,9 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access");
 
+  console.log("TOKEN:", token);
+  console.log("URL:", config.url);
+
   if (
     token &&
     !config.url.includes("users/login") &&

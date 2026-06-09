@@ -12,6 +12,11 @@ import RaffleDetail from "./pages/RaffleDetail";
 import MeusVendedores from "./pages/MeusVendedores";
 import VendedorDashboard from "./pages/VendedorDashboard";
 import PublicRaffle from "./pages/PublicRaffle";
+import Checkout from "./pages/Checkout";
+import PendingPayments from "./pages/PendingPayments";
+import ModerarComentarios from "./pages/ModerarComentarios";
+import ResultadoSorteio
+from "./pages/ResultadoSorteio";
 
 function App() {
   return (
@@ -71,11 +76,36 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+  path="/checkout/:transactionId"
+  element={<Checkout />}
+/>
         <Route path="/vendedores" element={<MeusVendedores />} />
         <Route path="/vendedor" element={<VendedorDashboard />} />
         <Route
   path="/r/:slug"
   element={<PublicRaffle />}
+/>
+<Route
+  path="/dashboard/pagamentos"
+  element={<PendingPayments />}
+/>
+<Route
+  path="/dashboard/comentarios"
+  element={
+    <PrivateRoute role="organizador">
+      <ModerarComentarios />
+    </PrivateRoute>
+  }
+  
+/>
+<Route
+  path="/dashboard/resultados/:id"
+  element={
+    <PrivateRoute role="organizador">
+      <ResultadoSorteio />
+    </PrivateRoute>
+  }
 />
       </Routes>
     </BrowserRouter>
