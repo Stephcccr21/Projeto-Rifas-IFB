@@ -1,220 +1,291 @@
-# 🎟 Raffles Platform API (Django + DRF)
+# Sistema de Rifas Online
 
-A backend API for a raffle platform where users can create raffles, sell tickets, and manage participation.
+## 1. Visão Geral do Projeto
 
-Built with **Django**, **Django REST Framework**, and **JWT authentication**.
+O Sistema de Rifas Online foi desenvolvido com o objetivo de facilitar a criação, gerenciamento e participação em rifas digitais. A plataforma permite que organizadores criem campanhas de arrecadação por meio de rifas, acompanhem vendas e pagamentos, realizem sorteios e divulguem resultados de forma transparente.
 
----
-
-## 🚀 Features
-
-### 👤 Authentication & Users
-
-* User registration (Organizer or Seller)
-* JWT login (secure authentication)
-* Password recovery (email simulation)
-* Editable user profile
-* Protected routes
-
-### 🎟 Raffles
-
-* Create raffle (Organizer only)
-* List raffles
-* Attach prizes to raffles
-
-### 💰 Sales
-
-* Sellers can sell raffle tickets
-* Linked to users and raffles
-
-### 🔐 Security
-
-* JWT authentication (`djangorestframework-simplejwt`)
-* Role-based permissions (Organizer / Seller)
+O projeto surgiu da necessidade de modernizar o processo tradicional de rifas, eliminando controles manuais e oferecendo uma experiência mais segura e organizada tanto para organizadores quanto para participantes.
 
 ---
 
-## 🛠 Tech Stack
+## 2. Contextualização do Problema
 
-* Python 3.12
-* Django 4.2
+Muitas rifas são organizadas utilizando planilhas, mensagens em aplicativos de conversa e controles manuais, o que pode gerar problemas como:
+
+* Dificuldade no gerenciamento dos números vendidos;
+* Falta de transparência nos sorteios;
+* Controle inadequado de pagamentos;
+* Dificuldade na divulgação dos resultados;
+* Falta de centralização das informações dos participantes.
+
+Diante desses desafios, foi desenvolvida uma solução web capaz de centralizar todas as etapas do processo de uma rifa.
+
+---
+
+## 3. Objetivos da Solução
+
+### Objetivo Geral
+
+Desenvolver uma plataforma web para gerenciamento completo de rifas online.
+
+### Objetivos Específicos
+
+* Permitir o cadastro e autenticação de usuários.
+* Possibilitar a criação e edição de rifas.
+* Gerenciar números disponíveis, reservados e pagos.
+* Controlar transações e pagamentos.
+* Permitir comentários dos participantes.
+* Realizar sorteios de forma organizada.
+* Divulgar automaticamente os resultados.
+* Disponibilizar uma página pública para divulgação da rifa.
+
+---
+
+## 4. Funcionalidades Implementadas
+
+### Área do Organizador
+
+* Cadastro e login de usuários.
+* Dashboard administrativo.
+* Criação de rifas.
+* Edição de rifas existentes.
+* Exclusão de rifas.
+* Visualização de todas as rifas criadas.
+* Gerenciamento de vendedores.
+* Moderação de comentários.
+* Controle de pagamentos pendentes.
+* Registro de pagamentos aprovados.
+* Realização de sorteios.
+* Divulgação dos resultados.
+
+### Área do Participante
+
+* Visualização pública da rifa.
+* Seleção de números disponíveis.
+* Reserva de números.
+* Preenchimento de dados do comprador.
+* Visualização do progresso da campanha.
+* Envio de comentários.
+* Consulta dos resultados dos sorteios.
+
+### Sistema de Sorteio
+
+* Cadastro de múltiplos prêmios.
+* Sorteio de números vencedores.
+* Registro dos ganhadores.
+* Exibição pública dos resultados.
+
+---
+
+## 5. Tecnologias Utilizadas
+
+### Frontend
+
+* React
+* React Router DOM
+* Axios
+* JavaScript (ES6+)
+* HTML5
+* CSS3
+
+### Backend
+
+* Python
+* Django
 * Django REST Framework
-* Simple JWT
+
+### Banco de Dados
+
+* SQLite (ambiente de desenvolvimento)
+
+### Ferramentas Auxiliares
+
+* Git
+* GitHub
+* Visual Studio Code
+* Postman
 
 ---
 
-## 📦 Installation
+## 6. Arquitetura da Solução
 
-### 1. Clone the repository
+O sistema segue uma arquitetura cliente-servidor:
+
+### Frontend
+
+Responsável pela interface do usuário, consumo das APIs REST e exibição dos dados.
+
+### Backend
+
+Responsável pelas regras de negócio, autenticação, gerenciamento das rifas, pagamentos, comentários e sorteios.
+
+### Banco de Dados
+
+Responsável pelo armazenamento das informações do sistema.
+
+---
+
+## 7. Instalação e Configuração
+
+### Pré-requisitos
+
+* Python 3.10+
+* Node.js 18+
+* npm
+* Git
+
+---
+
+### Clonar o Projeto
 
 ```bash
-git clone https://github.com/your-username/raffles-api.git
-cd raffles-api
+git clone <url-do-repositorio>
+cd projeto-rifas
 ```
 
 ---
 
-### 2. Create virtual environment
+### Backend
+
+Entrar na pasta do backend:
 
 ```bash
-python3.12 -m venv venv
+cd backend
+```
+
+Criar ambiente virtual:
+
+```bash
+python -m venv venv
+```
+
+Ativar ambiente virtual:
+
+Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+Linux/Mac:
+
+```bash
 source venv/bin/activate
 ```
 
----
-
-### 3. Install dependencies
+Instalar dependências:
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-### 4. Run migrations
+Executar migrações:
 
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 ```
 
----
-
-### 5. Create superuser (optional)
-
-```bash
-python manage.py createsuperuser
-```
-
----
-
-### 6. Run server
+Iniciar servidor:
 
 ```bash
 python manage.py runserver
 ```
 
----
+Servidor disponível em:
 
-## 🔑 Authentication (JWT)
-
-### Login
-
-```
-POST /api/users/auth/login/
-```
-
-Response:
-
-```json
-{
-  "access": "your_access_token",
-  "refresh": "your_refresh_token"
-}
+```text
+http://127.0.0.1:8000
 ```
 
 ---
 
-### Use token in requests
+### Frontend
 
+Entrar na pasta do frontend:
+
+```bash
+cd frontend
 ```
-Authorization: Bearer <access_token>
+
+Instalar dependências:
+
+```bash
+npm install
 ```
 
----
+Executar aplicação:
 
-## 📌 API Endpoints
-
-### 👤 Users
-
-| Method  | Endpoint                    | Description       |
-| ------- | --------------------------- | ----------------- |
-| POST    | `/api/users/auth/register/` | Register user     |
-| POST    | `/api/users/auth/login/`    | Login             |
-| GET/PUT | `/api/users/profile/`       | View/Edit profile |
-
----
-
-### 🎟 Raffles
-
-| Method | Endpoint                       | Description   |
-| ------ | ------------------------------ | ------------- |
-| GET    | `/api/raffles/raffles/`        | List raffles  |
-| POST   | `/api/raffles/raffles/create/` | Create raffle |
-
----
-
-### 💰 Sales
-
-| Method | Endpoint             | Description |
-| ------ | -------------------- | ----------- |
-| GET    | `/api/sales/`        | List sales  |
-| POST   | `/api/sales/create/` | Create sale |
-
----
-
-### 🔐 Password Reset
-
-| Endpoint           |
-| ------------------ |
-| `/password-reset/` |
-
-> Uses Django email console backend for testing.
-
----
-
-## 🧪 Testing (Browser-Friendly)
-
-You can test endpoints directly in the browser using DRF UI:
-
-* Login → copy token
-* Click "Authorize"
-* Paste:
-
+```bash
+npm run dev
 ```
-Bearer your_token_here
+
+Aplicação disponível em:
+
+```text
+http://localhost:5173
 ```
 
 ---
 
-## 🧱 Project Structure
+## 8. Principais Decisões Técnicas
 
-```
-apps/
-  users/
-  raffles/
-  sales/
-  payments/
-  comments/
+Durante o desenvolvimento foram adotadas as seguintes decisões:
 
-rifas_project/
-  settings.py
-  urls.py
-```
+### Utilização do React
+
+Foi escolhido React para construção da interface devido à sua componentização, reutilização de código e facilidade de manutenção.
+
+### Utilização do Django REST Framework
+
+O Django REST Framework foi adotado para disponibilizar APIs REST robustas, seguras e escaláveis.
+
+### Separação Frontend e Backend
+
+A arquitetura desacoplada permite maior flexibilidade de desenvolvimento e futuras integrações com aplicativos móveis ou outros sistemas.
+
+### Sistema de Status dos Números
+
+Os números da rifa possuem diferentes estados:
+
+* Disponível
+* Reservado
+* Aguardando Aprovação
+* Pago
+
+Essa abordagem facilita o controle das vendas e reduz conflitos entre participantes.
+
+### Página Pública
+
+Foi criada uma página pública acessível por URL amigável (slug), permitindo divulgação sem necessidade de autenticação.
+
+### Sistema de Comentários Moderados
+
+Os comentários passam por moderação antes de serem exibidos, garantindo maior controle sobre o conteúdo publicado.
 
 ---
 
-## ⚠️ Notes
+## 9. Resultados Obtidos
 
-* Email sending is simulated using console backend
-* SQLite used for development
-* Python 3.14 is NOT supported → use Python 3.12
+O sistema desenvolvido atende aos objetivos propostos, permitindo o gerenciamento completo de rifas online, desde a criação até a divulgação dos resultados.
 
----
+A solução oferece:
 
-## 📈 Next Improvements
-
-* Ticket numbering system
-* Payment integration (Stripe / Pix)
-* Raffle draw logic
-* Frontend (React / Next.js)
-* Email templates (HTML)
+* Centralização das informações;
+* Maior transparência nos sorteios;
+* Facilidade de uso para organizadores e participantes;
+* Controle eficiente dos pagamentos;
+* Divulgação automatizada dos resultados.
 
 ---
 
-## 👩‍💻 Author
+## 10. Autoria
 
-Stephany Carvalho
+Projeto desenvolvido como atividade acadêmica para a disciplina de Desenvolvimento Web.
+
+Equipe responsável:
+
+* Stephany Carvalho
+
 
 ---
 
